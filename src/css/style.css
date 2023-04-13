@@ -1,0 +1,20 @@
+body{
+	margin:0px;
+	padding:0px;
+	overflow: hidden;
+}
+
+.opts{
+	width: 100%;
+	display:flex;
+	position:fixed;
+	color: white;
+	text-shadow: #000000 1px 0 10px;
+	bottom:4%;
+	justify-content: space-around;
+	align-items: flex-end;
+}
+
+.qr-hidden{
+	display:none;
+}
