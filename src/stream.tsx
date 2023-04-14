@@ -5,14 +5,19 @@ import { useParams } from 'react-router-dom';
 
 window.React = React 
 
+function isMobile() {
+	const isAndroid = /Android/i.test(navigator.userAgent);
+	const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+	return isAndroid || isiOS;
+}
+
+
 const Stream: React.FC = ({peer, ctx}) => {
 	const {host} = useParams()
 
 	const [conn, set_conn] = useState()
 
 	const [logs, set_logs] = useState('')
-
-	const [interacted, set_interacted] = useState(false)
 
 	const output = useRef()
 
@@ -23,11 +28,12 @@ const Stream: React.FC = ({peer, ctx}) => {
 
 	const animate_ref = useRef()
 
+
 	const animate = useCallback((time)=>{
 		// animate function to render video into canvas in case video changes src abruptly
 		const output_ctx = ctx.current
 
-		const video = output.current
+		const video = output.current.querySelector('video')
 		const width = video.videoWidth
 		const height = video.videoHeight
 
@@ -45,12 +51,27 @@ const Stream: React.FC = ({peer, ctx}) => {
 		}
 		return ()=>{
 			clearInterval(animate_ref.current)
-
 		}
 	}, [ctx, output])
 
 	useEffect(()=>{
-		if(!output.current){ return }
+		if(!output.current ){ return }
+		const video = output.current.querySelector('video')
+
+		const constraints = {
+			video:{
+				width: {
+					ideal: window.screen.width
+				},
+				height: {
+					ideal: window.screen.height
+				}
+			}
+		}
+
+		if(isMobile()){
+			constraints.video = true
+		}
 
 		// in case of change, update devices
 		navigator.mediaDevices.ondevicechange = function(dev){
@@ -63,34 +84,31 @@ const Stream: React.FC = ({peer, ctx}) => {
 			})
 		}
 
-		navigator.mediaDevices.getUserMedia({
-			video:{
-				width: {
-					ideal: window.screen.width
-				},
-				height: {
-					ideal: window.screen.height
-				}
-				}
-		}).then((stream)=>{
-			//stream.getTracks().forEach(track => track.stop());
 
-			console.debug("stream [output]", stream)
-			output.current.srcObject = stream
-			output.current.play()
 
-			navigator.mediaDevices.enumerateDevices().then((devs) => {
-				set_devices(old_devs => {
-					const new_devices = devs.filter(device => device.kind == 'videoinput')
-					console.debug("new devs", new_devices)
-					if(new_devices.length > 0 ){
-						set_selected(new_devices[0])
-					}
-					return new_devices
+		navigator.mediaDevices.getUserMedia(constraints)
+			.then((stream)=>{
+				//stream.getTracks().forEach(track => track.stop());
+
+
+				console.debug("stream video",video)
+				video.srcObject = stream
+				video.play()
+
+				navigator.mediaDevices.enumerateDevices().then((devs) => {
+					set_devices(old_devs => {
+						const new_devices = devs.filter(device => device.kind == 'videoinput')
+						if(new_devices.length > 0 ){
+							set_selected(new_devices[0])
+						}
+						return new_devices
+					})
 				})
-			})
 
-		})
+			}).catch(err=>{
+				alert("error")
+				alert(stream)
+			})
 
 	},[output])
 
@@ -98,9 +116,11 @@ const Stream: React.FC = ({peer, ctx}) => {
 	const toggle_stream = useCallback(()=>{
 		if(!peer || !output.current || !selected.deviceId || !stream) return
 
+		const video = output.current.querySelector('video')
+
 		if(conn){
 			conn.close()
-			output.current.pause()
+			video.pause()
 			set_conn(null)
 			set_logs("streaming stopped")
 			console.debug("stoppipng connection")
@@ -108,7 +128,6 @@ const Stream: React.FC = ({peer, ctx}) => {
 
 			console.debug("interacted waiting to load")
 
-			const video = output.current
 			const width = video.videoWidth
 			const height = video.videoHeight
 
@@ -128,29 +147,33 @@ const Stream: React.FC = ({peer, ctx}) => {
 
 	return (
 		<>
-			<div>
-				<video class="output" ref={output} muted loop  ></video>
-			</div>
-			<div>
-				{
-					devices.length > 0 ? 
+			<div ref={output} dangerouslySetInnerHTML={{ __html: `
+				<video
+				class="output"
+				muted
+				autoplay
+				playsinline
+				/>` }}/>
+		  <div>
+			{
+				devices.length > 0 ? 
 
-					<select id="devices" name="" disabled={conn != null}>
-						{devices.map(d => <option selected={d.deviceId == selected.deviceId} value={d.label}>{d.label} </option> )}
-					</select>
-					: <h3>no sources detected</h3>
-				}
-			</div>
-			<div class="link" onClick={toggle_stream}>
-				<h2>
-					{ (peer && stream) ?  ( conn ? 'stop' : 'stream' )   : 'connecting' }
-				</h2>
-			</div>
-			<div>
-				<pre>{logs}</pre>
-			</div>
-		</>
-	)
+				<select id="devices" name="" disabled={conn != null}>
+					{devices.map(d => <option selected={d.deviceId == selected.deviceId} value={d.label}>{d.label} </option> )}
+				</select>
+				: <h3>no sources detected</h3>
+			}
+		</div>
+		<div class="link" onClick={toggle_stream}>
+			<h2>
+				{ (peer && stream ) ?  ( conn ? 'stop' : 'stream' )   : 'connecting' }
+			</h2>
+		</div>
+		<div>
+			<pre>{logs}</pre>
+		</div>
+	</>
+)
 };
 
 export default Stream;
