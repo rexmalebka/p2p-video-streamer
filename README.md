@@ -7,9 +7,9 @@ p2p video streamer created with react and peerjs
 
 ## host
 
-works as a server endpoint, switches video sources 
+works as a server endpoint, collects video streams
 
 ## client
 
-streams video from webcam / cam source to an endpoint using webrtc calls
+streams video from a cam source to an endpoint using webrtc calls
 
