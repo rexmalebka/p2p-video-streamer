@@ -1,20 +1,58 @@
-body{
-	margin:0px;
-	padding:0px;
+body {
+	margin: 0px;
+	padding: 0px;
 	overflow: hidden;
+	background-color: #EED3D9;
+	font-family: monospace;
+	font-size: 16pt;
 }
 
-.opts{
+/*
+#B5C0D0 azulito
+#CCD3CA verdecito
+#F5E8DD amarillo
+#EED3D9 rosita
+*/
+#app {
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+}
+
+#app>div:first-child {
+	background-color: #B5C0D0;
+	padding: 1em;
+	border-radius: 5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: center;
+	border: 1px solid black;
+	overflow-y: scroll;
+}
+
+#app>div:first-child>div {
 	width: 100%;
-	display:flex;
-	position:fixed;
-	color: white;
-	text-shadow: #000000 1px 0 10px;
-	bottom:4%;
+	display: flex;
 	justify-content: space-around;
-	align-items: flex-end;
 }
 
-.qr-hidden{
-	display:none;
+button {
+	background-color: #F5E8DD;
+	border: 1px solid black;
+	color: black;
+	font-size: 16pt;
+}
+
+*:disabled {
+	background-color: #B5C0D0;
+	border: 1px solid black;
+	color: black;
+}
+
+input {
+	font-size: 16pt;
+	background-color: #F5E8DD;
 }

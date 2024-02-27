@@ -1,109 +1,73 @@
-import * as ReactDOM from "react-dom"
-const QRCode = require('qrcode')
-import React , { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'
+import Peer, { MediaConnection } from 'peerjs'
+import { useEffect, useCallback, useState, useRef } from 'react'
+import * as QRCode from 'qrcode'
+import type { peer_status } from './main'
 
-
-const host: React.FC = ({peer, ctx, streams, current_stream})=> {
+const Host = ({ peer, peer_id, peer_status }: { peer: Peer, peer_id: string, peer_status: peer_status }) => {
 	const navigate = useNavigate()
 
-	// qr stuff
-	const [qr_vis, set_qr_vis] = useState(false)
-	const [qr_url, set_qr_url] = useState('')
-	const qr_ref = useRef()
+	const qr_canvas = useRef<HTMLCanvasElement>(null)
 
-	// log
-	const [logs, set_logs] = useState('')
+	const [stream, set_stream] = useState<MediaStream>()
 
-	// output ctx
-	const ctx_ref = useRef()
-	
-	// ref for animation frame
-	const animate_ref = useRef()
-
-	// ref for videos
-	const videos_ref = useRef({})
+	const video_ref = useRef<HTMLVideoElement>(null)
 
 
-	useEffect(()=> set_logs("creating host.") ,[])
+	useEffect(() => {
+		if (!qr_canvas.current || !peer_id || !peer) return
+
+		const url = new URL(`${location.protocol}//${location.host}${location.pathname}/#/stream/${peer_id}`)
+
+		url.searchParams.append('host', peer.options.host || '')
+		url.searchParams.append('port', `${peer.options.port}`)
+		url.searchParams.append('path', peer.options.path || '')
+		
+		const canvas = qr_canvas.current
+
+		QRCode.toCanvas(canvas, url.href)
+
+	}, [qr_canvas, peer_id, peer])
+
+	const listen_calls = useCallback((call: MediaConnection) => {
+
+		console.debug("caall", call)
+
+		call.on('stream', (stream: MediaStream) => {
+			set_stream(stream)
+		})
+
+		call.answer()
+	}, [])
 
 
-	useEffect(()=>{
-		if(qr_ref.current && peer && peer.id && !qr_url){
-			//const url = `${}/#/stream/${peer.id}`
-			const url=`${location.protocol}//${location.host}${location.pathname}/#/stream/${peer.id}`
-			set_qr_url(url)
-			QRCode.toCanvas(qr_ref.current, url)
-			set_logs(`host with id: ${peer.id}.`)
+	useEffect(() => {
+		if (!peer || peer_status != 'connected') return
+
+		peer.addListener('call', listen_calls)
+
+		return () => {
+			peer.removeListener('call', listen_calls)
 		}
-	})
+	}, [peer, peer_status])
 
-	const animate = useCallback((time)=>{
+	useEffect(() => {
+		if (!video_ref.current || !stream) return
 
-		const cs = current_stream.current
-		const output_ctx = ctx.current
-		const stream = videos_ref.current[cs]
+		video_ref.current.srcObject = stream
+		video_ref.current.play()
 
-		//console.debug("ctx", ctx, cs, stream)
-		if(output_ctx && stream){
-			const res = stream.metadata.res
-
-			output_ctx.clearRect(0,0, res[0], res[1]);
-			output_ctx.drawImage(stream.video, 0, 0, res[0], res[1])
-		}
-	},[ctx, streams, current_stream])
-
-		/*useEffect(()=>{
-		console.debug("streams uwu")
-	},[streams])
-		 */
-	useEffect(()=>{
-		//animate_ref.current = requestAnimationFrame(animate)
-		animate_ref.current = setInterval(animate, 10)
-		return ()=>{
-			clearInterval(animate_ref.current)
-		}
-	}, [streams, ctx_ref])
-
+		video_ref.current.style.width = '100%'
+		video_ref.current.style.height = '100%'
+	}, [video_ref, stream])
 
 	return (
 		<>
-			<div onClick={ ()=> set_qr_vis(!qr_vis) } class="link">
-				<h2>{qr_vis ? 'hide qr' : 'show qr'}</h2>
-			</div>
-			<div className={ qr_vis ? 'link' : 'link hidden'}>
-				<a href={qr_url}>
-					<canvas id="qr" ref={qr_ref}></canvas>
-				</a>
-			</div>
-			<div>
-				<h3>{streams.length} sources</h3>
-			</div>
-			<div>
-				<pre>{logs}</pre>
-			</div>
-			<div class="hidden">{ streams.map( (stream,i) => {
-				return (
-					<video ref={ (vid)=>{
-						if(vid){
-							videos_ref.current[i] = {
-								...stream,
-								video:vid
-							}
-							vid.srcObject = stream.stream
-							vid.play()
-							vid.width = stream.metadata.res[0]
-							vid.height = stream.metadata.res[1]
-						}
-					}
-						}>
-					</video>)
-				}) }
-			</div>
-
-
+			<div><canvas ref={qr_canvas}></canvas></div>
+			<div><button onClick={() => navigate('/')}>📡 stop Hosting</button></div>
+			<div><video playsInline={true} muted controls autoPlay={true} loop ref={video_ref}></video></div>
 		</>
 	)
 }
 
-export default host
+export default Host
