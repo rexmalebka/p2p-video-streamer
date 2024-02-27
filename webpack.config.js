@@ -10,7 +10,7 @@ module.exports = {
 		publicPath: '/'
 	},
 	resolve: {
-		extensions: ['.ts', '.js'],
+		extensions: ['.tsx','.ts', '.js'],
 		fallback: {
 			fs: false,
 			path: false,

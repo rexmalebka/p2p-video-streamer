@@ -13,13 +13,13 @@ const Stream = ({ peer, peer_status, change_configuration }: { peer: Peer, peer_
     const video_ref = useRef<HTMLVideoElement>(null)
 
 
-    useEffect(() => {
-        const host = searchParams.get('host') || ''
-        const port = Number(searchParams.get('port')) || 443
-        const path = searchParams.get('path') || ''
+    // useEffect(() => {
+    //     const host = searchParams.get('host') || ''
+    //     const port = Number(searchParams.get('port')) || 443
+    //     const path = searchParams.get('path') || ''
 
-        change_configuration(host, port, path)
-    }, [searchParams])
+    //     change_configuration(host, port, path)
+    // }, [searchParams])
 
     useEffect(() => {
         if (!host_id || !stream || !peer || peer_status != 'connected') return
@@ -33,7 +33,7 @@ const Stream = ({ peer, peer_status, change_configuration }: { peer: Peer, peer_
 
     useEffect(() => {
         if(peer_status != 'connected') return
-        
+
         navigator.mediaDevices.getUserMedia({
             audio: false,
             video: (window.innerWidth <= 768) ? {

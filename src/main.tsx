@@ -100,6 +100,12 @@ const Router = () => {
     const change_configuration = useCallback((host: string, port: number, path: string) => {
         if (!peer) return
 
+        if(
+            peer.options.host == host && 
+            peer.options.port == port && 
+            peer.options.path == path 
+            ) return
+            
         peer.destroy()
         set_peer(undefined)
         const p = new Peer(
